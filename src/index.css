@@ -1,8 +1,21 @@
 @import "tailwindcss";
 
 * {
-  margin: 0;
-  padding: 0;
   box-sizing: border-box;
   font-family: "Montserrat", sans-serif;
+}
+
+@layer utilities {
+  .gradient {
+    border-top-left-radius: 2px;
+    border-top-right-radius: 2px;
+  }
+
+  .gradient:hover {
+    @apply bg-gradient-to-r from-teal-600 via-blue-600 to-pink-600;
+  }
+
+  .gradient-menu {
+    @apply bg-gradient-to-r from-teal-600 via-blue-600 to-pink-600;
+  }
 }
