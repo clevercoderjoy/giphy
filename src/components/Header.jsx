@@ -7,9 +7,9 @@ import SearchBar from './SearchBar';
 const Header = () => {
 
   const navigate = useNavigate();
+  const { giphy, gifs, setGifs, favourite } = useGif();
   const [categories, setCategories] = useState([]);
   const [showCategories, setShowCategories] = useState(false);
-  const { giphy, gifs, setGifs, favourite } = useGif();
 
   const handleCategoryClick = (category) => {
     setShowCategories(false);
@@ -74,7 +74,7 @@ const Header = () => {
                   categories?.map((category) => {
                     return (
                       <Link className='font-bold' key={category.name} onClick={() => handleCategoryClick(category)}>
-                        {category.name_encoded}
+                        {category.name}
                       </Link>
                     )
                   })
