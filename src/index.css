@@ -18,4 +18,12 @@
   .gradient-menu {
     @apply bg-gradient-to-r from-teal-600 via-blue-600 to-pink-600;
   }
+
+  .filter-style {
+    @apply bg-gradient-to-r from-teal-600 via-blue-600 to-pink-600;
+  }
+
+  .filter:hover {
+    @apply bg-gradient-to-r from-teal-600 via-blue-600 to-pink-600;
+  }
 }
