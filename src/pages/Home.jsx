@@ -21,7 +21,7 @@ const Home = () => {
 
   return (
     <div>
-      <img className='mt-2 rounded w-full' src="/public/banner.gif" alt="earth-banner" />
+      <img className='mt-2 rounded w-full' src="/banner.gif" alt="earth-banner" />
 
       <Filters alignLeft showTrending />
 

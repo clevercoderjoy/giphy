@@ -1,14 +1,22 @@
 import React, { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { HiEllipsisVertical, HiMiniBars3BottomRight } from "react-icons/hi2";
 import { useGif } from './../context/GifContext';
+import SearchBar from './SearchBar';
 
 const Header = () => {
 
+  const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
   const [showCategories, setShowCategories] = useState(false);
-  const { giphy, gifs, setGifs, filter, setFilter, favourite } = useGif();
+  const { giphy, gifs, setGifs, favourite } = useGif();
 
+  const handleCategoryClick = (category) => {
+    setShowCategories(false);
+    setTimeout(() => {
+      navigate(`/${category.name}`);
+    }, 0);
+  };
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -32,7 +40,7 @@ const Header = () => {
         {
           categories?.slice(0, 5)?.map((category) => {
             return (
-              <Link className='whitespace-nowrap truncate px-4 py-1 transition ease-in-out gradient border-b-4 hidden lg:block' key={category.name}>{category.name}</Link>
+              <Link className='whitespace-nowrap truncate px-4 py-1 transition ease-in-out gradient border-b-4 hidden lg:block' key={category.name} to={`/${category.name}`}>{category.name}</Link>
             )
           })
         }
@@ -65,7 +73,7 @@ const Header = () => {
                 {
                   categories?.map((category) => {
                     return (
-                      <Link className='font-bold' key={category.name} to={`/${category.name}`}>
+                      <Link className='font-bold' key={category.name} onClick={() => handleCategoryClick(category)}>
                         {category.name_encoded}
                       </Link>
                     )
@@ -78,6 +86,7 @@ const Header = () => {
       </div>
 
       {/* search */}
+      <SearchBar />
     </nav>
   )
 }
