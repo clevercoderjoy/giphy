@@ -17,10 +17,10 @@ const GifProvider = ({ children }) => {
 
   const [gifs, setGifs] = useState([]);
   const [filter, setFilter] = useState("gifs");
-  const [favourite, setFavourite] = useState([]);
+  const [favourites, setFavourites] = useState([]);
 
   return (
-    <GifContext.Provider value={{ giphy, gifs, setGifs, filter, setFilter, favourite }}>
+    <GifContext.Provider value={{ giphy, gifs, setGifs, filter, setFilter, favourites }}>
       {children}
     </GifContext.Provider>
   )

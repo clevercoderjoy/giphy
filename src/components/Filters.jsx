@@ -1,4 +1,3 @@
-import React from 'react'
 import { useGif } from '../context/GifContext'
 import { HiMiniArrowTrendingUp } from 'react-icons/hi2';
 import { filters } from '../data/filterData';
@@ -6,6 +5,7 @@ import { filters } from '../data/filterData';
 const Filters = ({ alignLeft = false, showTrending = false }) => {
 
   const { filter, setFilter } = useGif();
+
   return (
     <>
       <div className={`flex my-3 gap-3 ${alignLeft ? "" : "justify-end"} ${showTrending ? "justify-between flex-col sm:flex-row sm:items-center" : ""}`}>
