@@ -33,7 +33,7 @@ const Category = () => {
             Don&apos;t tell it to me, Just GIF it to me!
           </span>
           <FollowOn />
-          <div className="divider"></div>
+          <div className="divider" />
         </div>
         <div>
           {

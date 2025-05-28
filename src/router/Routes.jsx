@@ -4,8 +4,8 @@ import Home from './../pages/Home';
 import Category from './../pages/Category';
 import Search from './../pages/Search';
 import Favourite from './../pages/Favourite';
-import Gif from './../pages/Gif';
 import NotFound from './../pages/NotFound';
+import SingleGif from "../pages/SingleGif";
 
 const router = createBrowserRouter([
   {
@@ -26,7 +26,7 @@ const router = createBrowserRouter([
       },
       {
         path: "/:type/:slug",
-        element: <Gif />
+        element: <SingleGif />
       },
       {
         path: "favourites",

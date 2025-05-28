@@ -7,7 +7,7 @@ import SearchBar from './SearchBar';
 const Header = () => {
 
   const navigate = useNavigate();
-  const { giphy, gifs, setGifs, favourite } = useGif();
+  const { giphy, gifs, setGifs, favourites } = useGif();
   const [categories, setCategories] = useState([]);
   const [showCategories, setShowCategories] = useState(false);
 
@@ -51,7 +51,7 @@ const Header = () => {
           </button>
 
           {/* favourites button */}
-          {favourite.length > 0 &&
+          {favourites.length > 0 &&
             (
               <button className="favourite h-9 bg-gray-700 hover:bg-gray-800 px-6 cursor-pointer rounded">
                 <Link to="/favourites">Favoutite GIFs</Link>

@@ -24,8 +24,6 @@ const Search = () => {
     fetchSearchResults()
   }, [filter, giphy, query])
 
-  console.log(searchResults)
-
   return (
     <>
       <div className='my-4'>
