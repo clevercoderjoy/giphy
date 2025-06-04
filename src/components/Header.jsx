@@ -53,7 +53,7 @@ const Header = () => {
           {/* favourites button */}
           {favourites.length > 0 &&
             (
-              <button className="favourite h-9 bg-gray-700 hover:bg-gray-800 px-6 cursor-pointer rounded">
+              <button className="favourite truncate h-10 bg-gray-700 hover:bg-gray-800 px-4 cursor-pointer rounded">
                 <Link to="/favourites">Favoutite GIFs</Link>
               </button>
             )

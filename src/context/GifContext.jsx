@@ -1,5 +1,5 @@
 import { GiphyFetch } from "@giphy/js-fetch-api";
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
 const GifContext = createContext();
 
@@ -19,8 +19,26 @@ const GifProvider = ({ children }) => {
   const [filter, setFilter] = useState("gifs");
   const [favourites, setFavourites] = useState([]);
 
+  const addToFavorites = (id) => {
+    if (favourites.includes(id)) {
+      const updatedFavourites = favourites.filter((itemId) => itemId !== id);
+      localStorage.setItem("favouriteGIFs", JSON.stringify(updatedFavourites));
+      setFavourites(updatedFavourites);
+    }
+    else {
+      const updatedFavourites = [...favourites, id];
+      localStorage.setItem("favouriteGIFs", JSON.stringify(updatedFavourites));
+      setFavourites(updatedFavourites);
+    }
+  }
+
+  useEffect(() => {
+    const favouritesGifs = JSON.parse(localStorage.getItem("favouriteGIFs")) || [];
+    setFavourites(favouritesGifs);
+  }, []);
+
   return (
-    <GifContext.Provider value={{ giphy, gifs, setGifs, filter, setFilter, favourites }}>
+    <GifContext.Provider value={{ giphy, gifs, setGifs, filter, setFilter, favourites, addToFavorites }}>
       {children}
     </GifContext.Provider>
   )

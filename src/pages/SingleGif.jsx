@@ -12,10 +12,12 @@ import { IoCodeSharp } from 'react-icons/io5';
 const SingleGif = () => {
 
   const { type, slug } = useParams();
-  const { giphy, addToFavorites, favorites } = useGif();
+  const { giphy, addToFavorites, favourites } = useGif();
   const [gif, setGif] = useState({});
   const [relatedGifs, setRelatedGifs] = useState([]);
   const [readMore, setReadMore] = useState(false);
+
+  console.log("favorites", favourites)
 
   const shareGif = () => { }
 
@@ -141,10 +143,10 @@ const SingleGif = () => {
               >
                 <HiMiniHeart
                   size={30}
-                  className={`${favorites?.includes(gif.id) ? "text-red-500" : ""
+                  className={`${favourites?.includes(gif.id) ? "text-red-500" : ""
                     }`}
                 />
-                Favorite
+                Favourite
               </button>
               <button
                 onClick={shareGif}
