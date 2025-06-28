@@ -5,19 +5,11 @@ import Filters from '../components/Filters';
 
 const Home = () => {
 
-  const { giphy, gifs, setGifs, filter, setFilter, favourite } = useGif();
+  const { trendingGifs, fetchTrending, filter } = useGif();
 
   useEffect(() => {
-    const fetchTrendingGifs = async () => {
-      const { data } = await giphy.trending({
-        limit: 20,
-        type: filter,
-        rating: 'g',
-      })
-      setGifs(data);
-    }
-    fetchTrendingGifs();
-  }, [filter, giphy, setGifs])
+    fetchTrending({ limit: 20, type: filter });
+  }, [fetchTrending, filter])
 
   return (
     <div>
@@ -27,7 +19,7 @@ const Home = () => {
 
       <div className='columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-2'>
         {
-          gifs.map((gif) => {
+          trendingGifs.map((gif) => {
             return (
               <Gif key={gif?.title} gif={gif} />
             )

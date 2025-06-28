@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { useGif } from '../context/GifContext';
 import Filters from '../components/Filters';
@@ -7,22 +7,17 @@ import Gif from '../components/Gif';
 const Search = () => {
 
   const { query } = useParams();
-  const { giphy, filter } = useGif();
+  const { searchResults, searchGifs, filter, } = useGif();
 
-  const [searchResults, setSearchResults] = useState([]);
 
   useEffect(() => {
-    const fetchSearchResults = async () => {
-      const { data } = await giphy.search(query, {
-        sort: "relevant",
-        lang: "en",
-        type: filter,
-        limit: 20,
-      });
-      setSearchResults(data);
-    }
-    fetchSearchResults()
-  }, [filter, giphy, query])
+    searchGifs(query, {
+      sort: "relevant",
+      lang: "en",
+      type: filter,
+      limit: 20,
+    })
+  }, [filter, query, searchGifs])
 
   return (
     <>

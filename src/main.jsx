@@ -5,11 +5,13 @@ import App from './App.jsx'
 import { RouterProvider } from 'react-router-dom'
 import router from './router/Routes.jsx'
 import GifProvider from './context/GifContext.jsx'
+import { ToastContainer } from 'react-toastify'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <GifProvider>
       <RouterProvider router={router} />
+      <ToastContainer />
     </GifProvider>
   </StrictMode>,
 )

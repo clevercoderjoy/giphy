@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
 import { useParams } from 'react-router-dom';
 import { useGif } from '../context/GifContext';
 import Gif from '../components/Gif';
@@ -7,17 +7,19 @@ import FollowOn from '../components/FollowOn';
 const Category = () => {
 
   const { category } = useParams();
-  const { giphy } = useGif();
-  const [categoryResults, setCategoryResults] = useState([]);
+  const { fetchCategories, categories } = useGif();
 
   useEffect(() => {
-    const fetchCategoryResults = async () => {
-      const { data } = await giphy.gifs(category, category);
-      setCategoryResults(data);
+    if (category) {
+      fetchCategories(category);
+    }
+    else {
+      fetchCategories();
     }
 
-    fetchCategoryResults();
-  }, [giphy, category]);
+  }, [category, fetchCategories]);
+
+  console.log("categories", categories)
 
   return (
     <>
@@ -25,8 +27,8 @@ const Category = () => {
       <div className='flex flex-col sm:flex-row gap-5 my-4'>
         <div className='w-full sm:w-72'>
           {
-            categoryResults?.length > 0 && (
-              <Gif gif={categoryResults[0]} hover={false} />
+            categories && categories?.length > 0 && (
+              <Gif gif={categories[0]} hover={false} />
             )
           }
           <span className="text-gray-400 text-sm pt-2">
@@ -37,10 +39,10 @@ const Category = () => {
         </div>
         <div>
           {
-            categoryResults.length > 0 && (
+            categories && categories.length > 0 && (
               <div className="columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-2">
                 {
-                  categoryResults?.slice(1)?.map((gif) => {
+                  categories?.slice(1)?.map((gif) => {
                     return (
                       <Gif gif={gif} key={gif.id} />
                     )

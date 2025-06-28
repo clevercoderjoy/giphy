@@ -7,8 +7,7 @@ import SearchBar from './SearchBar';
 const Header = () => {
 
   const navigate = useNavigate();
-  const { giphy, gifs, setGifs, favourites } = useGif();
-  const [categories, setCategories] = useState([]);
+  const { favourites, fetchCategories, categories } = useGif();
   const [showCategories, setShowCategories] = useState(false);
 
   const handleCategoryClick = (category) => {
@@ -19,12 +18,11 @@ const Header = () => {
   };
 
   useEffect(() => {
-    const fetchCategories = async () => {
-      const { data } = await giphy.categories();
-      setCategories(data);
+    const getCategories = async () => {
+      await fetchCategories();
     }
-    fetchCategories();
-  }, [giphy])
+    getCategories();
+  }, [fetchCategories])
 
   return (
     <nav>
