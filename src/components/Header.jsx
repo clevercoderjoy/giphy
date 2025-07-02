@@ -7,24 +7,24 @@ import SearchBar from './SearchBar';
 const Header = () => {
 
   const navigate = useNavigate();
-  const { giphy, gifs, setGifs, favourites } = useGif();
-  const [categories, setCategories] = useState([]);
+  const { favourites, fetchCategories, categories, fetchFavourites } = useGif();
   const [showCategories, setShowCategories] = useState(false);
 
   const handleCategoryClick = (category) => {
     setShowCategories(false);
-    setTimeout(() => {
-      navigate(`/${category.name}`);
-    }, 0);
+    navigate(`/${category.name}`);
   };
 
   useEffect(() => {
-    const fetchCategories = async () => {
-      const { data } = await giphy.categories();
-      setCategories(data);
+    const getCategories = async () => {
+      await fetchCategories();
     }
-    fetchCategories();
-  }, [giphy])
+    getCategories();
+  }, [fetchCategories])
+
+  useEffect(() => {
+    fetchFavourites();
+  }, [fetchFavourites])
 
   return (
     <nav>
@@ -50,15 +50,16 @@ const Header = () => {
               } border-b-4 cursor-pointer hidden lg:block`} size={35} />
           </button>
 
-          {/* favourites button */}
-          {favourites.length > 0 &&
-            (
-              <button className="favourite h-9 bg-gray-700 hover:bg-gray-800 px-6 cursor-pointer rounded">
-                <Link to="/favourites">Favoutite GIFs</Link>
-              </button>
-            )
-          }
-          <button>
+          {/* favourites button - only show when there are favorites */}
+          {Array.isArray(favourites) && favourites.length > 0 && (
+            <Link to="/favourites" className="favourite truncate ml-2 h-10 bg-gray-700 hover:bg-gray-800 px-4 cursor-pointer rounded flex items-center gap-2">
+              Favourite GIFs
+              <span className="ml-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                {favourites.length}
+              </span>
+            </Link>
+          )}
+          <button onClick={() => setShowCategories(!showCategories)}>
             <HiMiniBars3BottomRight className='text-sky-400 block lg:hidden' size={30} />
           </button>
         </div>
@@ -73,9 +74,13 @@ const Header = () => {
                 {
                   categories?.map((category) => {
                     return (
-                      <Link className='font-bold' key={category.name} onClick={() => handleCategoryClick(category)}>
+                      <button
+                        className='font-bold text-left'
+                        key={category.name}
+                        onClick={() => handleCategoryClick(category)}
+                      >
                         {category.name}
-                      </Link>
+                      </button>
                     )
                   })
                 }

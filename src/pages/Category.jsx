@@ -7,17 +7,26 @@ import FollowOn from '../components/FollowOn';
 const Category = () => {
 
   const { category } = useParams();
-  const { giphy } = useGif();
-  const [categoryResults, setCategoryResults] = useState([]);
+  const { fetchCategories, searchGifs, filter } = useGif();
+  const [categoryGifs, setCategoryGifs] = useState([]);
 
   useEffect(() => {
-    const fetchCategoryResults = async () => {
-      const { data } = await giphy.gifs(category, category);
-      setCategoryResults(data);
+    fetchCategories();
+
+    if (category) {
+      searchGifs(category, {
+        sort: "relevant",
+        lang: "en",
+        type: filter,
+        limit: 20,
+      }).then(data => {
+        if (data) {
+          setCategoryGifs(data);
+        }
+      });
     }
 
-    fetchCategoryResults();
-  }, [giphy, category]);
+  }, [category, fetchCategories, searchGifs, filter]);
 
   return (
     <>
@@ -25,8 +34,8 @@ const Category = () => {
       <div className='flex flex-col sm:flex-row gap-5 my-4'>
         <div className='w-full sm:w-72'>
           {
-            categoryResults?.length > 0 && (
-              <Gif gif={categoryResults[0]} hover={false} />
+            categoryGifs && categoryGifs?.length > 0 && (
+              <Gif gif={categoryGifs[0]} hover={false} />
             )
           }
           <span className="text-gray-400 text-sm pt-2">
@@ -37,15 +46,19 @@ const Category = () => {
         </div>
         <div>
           {
-            categoryResults.length > 0 && (
+            categoryGifs && categoryGifs.length > 0 ? (
               <div className="columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-2">
                 {
-                  categoryResults?.slice(1)?.map((gif) => {
+                  categoryGifs?.slice(1)?.map((gif, index) => {
                     return (
-                      <Gif gif={gif} key={gif.id} />
+                      <Gif gif={gif} key={`${gif?.id || 'category-gif'}-${index}`} />
                     )
                   })
                 }
+              </div>
+            ) : (
+              <div className="text-center p-8">
+                <p className="text-xl">Loading {category} GIFs...</p>
               </div>
             )
           }
