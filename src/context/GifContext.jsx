@@ -7,7 +7,7 @@ const GifContext = createContext();
 const apiCache = {
   trending: {},
   gifs: {},
-  categoris: {},
+  categories: {},
   related: {},
   search: {},
   favourites: {}
@@ -41,6 +41,8 @@ const GifProvider = ({ children }) => {
   const [categories, setCategories] = useState([]);
   const [filter, setFilter] = useState("gifs");
   const [favourites, setFavourites] = useState([]);
+
+  // cache validation
 
   const isDataCached = useCallback((cacheSection, key, ttl) => {
     if (!key || !cacheSection) {
@@ -144,14 +146,14 @@ const GifProvider = ({ children }) => {
   const fetchCategories = useCallback(async (categoryName) => {
     const cacheKey = categoryName || "all";
 
-    if (isDataCached(apiCache.categoris, cacheKey, CACHE_TTL.CATEGORIES)) {
-      setCategories(apiCache.categoris[cacheKey].data);
-      return apiCache.categoris[cacheKey].data;
+    if (isDataCached(apiCache.categories, cacheKey, CACHE_TTL.CATEGORIES)) {
+      setCategories(apiCache.categories[cacheKey].data);
+      return apiCache.categories[cacheKey].data;
     }
 
     try {
       const { data } = await giphy.categories();
-      apiCache.categoris[cacheKey] = {
+      apiCache.categories[cacheKey] = {
         data,
         timestamp: Date.now(),
       }
