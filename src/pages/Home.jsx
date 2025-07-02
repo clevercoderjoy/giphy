@@ -19,9 +19,9 @@ const Home = () => {
 
       <div className='columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-2'>
         {
-          trendingGifs.map((gif) => {
+          trendingGifs.map((gif, index) => {
             return (
-              <Gif key={gif?.title} gif={gif} />
+              <Gif key={`${gif?.id}-${index}`} gif={gif} />
             )
           })
         }

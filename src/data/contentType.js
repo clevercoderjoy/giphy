@@ -1,1 +1,1 @@
-export const contentType = ["gifs", "stikers", "texts"];
+export const contentType = ["gifs", "stickers", "texts"];

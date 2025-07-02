@@ -12,8 +12,18 @@ import { IoCodeSharp } from 'react-icons/io5';
 const SingleGif = () => {
 
   const { type, slug } = useParams();
-  const { fetchRelatedGifs, fetchGif, currentGif, relatedGifs, addToFavorites, favourites, shareGif, EmbedGif } = useGif();
+  const { fetchRelatedGifs, fetchGif, currentGif, relatedGifs, addToFavorites, favourites, shareGif, embedGif } = useGif();
   const [readMore, setReadMore] = useState(false);
+
+  const isFavorite = React.useMemo(() => {
+    if (!currentGif || !Array.isArray(favourites) || !favourites.length) return false;
+
+    if (typeof favourites[0] === "string") {
+      return favourites.includes(currentGif.id);
+    }
+
+    return favourites.some(favGif => favGif && favGif.id === currentGif.id);
+  }, [favourites, currentGif]);
 
   useEffect(() => {
     if (!contentType.includes(type)) {
@@ -62,7 +72,7 @@ const SingleGif = () => {
                           </div>
                         ) :
                           (
-                            <div div className='py-4 whitespace-pre-line text-sm text-gray-400'>
+                            <div className='py-4 whitespace-pre-line text-sm text-gray-400'>
                               {
                                 readMore ? currentGif?.user?.description : currentGif?.user?.description.slice(0, 100) + "..."
                               }
@@ -139,8 +149,7 @@ const SingleGif = () => {
               >
                 <HiMiniHeart
                   size={30}
-                  className={`${favourites?.includes(currentGif?.id) ? "text-red-500" : ""
-                    }`}
+                  className={`${isFavorite ? 'text-red-500 fill-red-500' : 'text-white'}`}
                 />
                 Favourite
               </button>
@@ -151,8 +160,9 @@ const SingleGif = () => {
                 <FaPaperPlane size={25} />
                 Share
               </button>
+              {/* Embade Gif */}
               <button
-                onClick={EmbedGif}
+                onClick={() => embedGif(currentGif)}
                 className="flex gap-5 items-center font-bold text-lg"
               >
                 <IoCodeSharp size={30} />
