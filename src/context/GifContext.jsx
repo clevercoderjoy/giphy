@@ -4,15 +4,6 @@ import { toast } from "react-toastify";
 
 const GifContext = createContext();
 
-const apiCache = {
-  trending: {},
-  gifs: {},
-  categories: {},
-  related: {},
-  search: {},
-  favourites: {}
-}
-
 const CACHE_TTL = {
   TRENDING: 15 * 60 * 1000,
   GIF: 30 * 60 * 1000,
@@ -21,6 +12,35 @@ const CACHE_TTL = {
   SEARCH: 5 * 60 * 1000,
   FAVOURITES: 120 * 60 * 1000
 }
+
+// Utility to load cache from localStorage
+function loadCacheFromStorage() {
+  const cache = localStorage.getItem("apiCache");
+  if (cache) {
+    try {
+      return JSON.parse(cache);
+    } catch {
+      // If corrupted, clear it
+      localStorage.removeItem("apiCache");
+    }
+  }
+  return {
+    trending: {},
+    gifs: {},
+    categories: {},
+    related: {},
+    search: {},
+    favourites: {}
+  };
+}
+
+// Utility to save cache to localStorage
+function saveCacheToStorage(cache) {
+  localStorage.setItem("apiCache", JSON.stringify(cache));
+}
+
+// Initialize apiCache from localStorage
+const apiCache = loadCacheFromStorage();
 
 export const useGif = () => {
   const context = useContext(GifContext);
@@ -72,6 +92,7 @@ const GifProvider = ({ children }) => {
         data,
         timestamp: Date.now()
       }
+      saveCacheToStorage(apiCache);
       setTrendingGifs(data);
       return data;
     } catch (error) {
@@ -92,6 +113,7 @@ const GifProvider = ({ children }) => {
         data,
         timestamp: Date.now()
       }
+      saveCacheToStorage(apiCache);
       setCurrentGif(data);
       return data;
     } catch (error) {
@@ -114,6 +136,7 @@ const GifProvider = ({ children }) => {
         data,
         timestamp: Date.now()
       }
+      saveCacheToStorage(apiCache);
       setRelatedGifs(data);
       return data;
     } catch (error) {
@@ -135,6 +158,7 @@ const GifProvider = ({ children }) => {
         data,
         timestamp: Date.now()
       };
+      saveCacheToStorage(apiCache);
       setSearchResults(data);
       return data;
     } catch (error) {
@@ -157,6 +181,7 @@ const GifProvider = ({ children }) => {
         data,
         timestamp: Date.now(),
       }
+      saveCacheToStorage(apiCache);
       setCategories(data);
       return data;
     } catch (error) {
@@ -168,41 +193,16 @@ const GifProvider = ({ children }) => {
   const fetchFavourites = useCallback(async () => {
     try {
       const storedFavorites = localStorage.getItem("favouriteGifs");
-
-      let favouriteIds = [];
-      if (storedFavorites) {
-        try {
-          favouriteIds = JSON.parse(storedFavorites);
-          if (!Array.isArray(favouriteIds)) {
-            favouriteIds = [];
-            localStorage.setItem("favouriteGifs", JSON.stringify([]));
-          }
-        } catch (e) {
-          console.error("Error parsing favorites from localStorage", e);
-          favouriteIds = [];
-          localStorage.setItem("favouriteGifs", JSON.stringify([]));
-        }
-      }
+      const favouriteIds = storedFavorites ? JSON.parse(storedFavorites) : [];
 
       if (!favouriteIds.length) {
         setFavourites([]);
         apiCache.favourites = {};
+        saveCacheToStorage(apiCache);
         return [];
       }
 
-      const validIds = favouriteIds.filter(id => id && typeof id === 'string' && id.trim() !== '');
-
-      if (validIds.length !== favouriteIds.length) {
-        localStorage.setItem("favouriteGifs", JSON.stringify(validIds));
-      }
-
-      if (!validIds.length) {
-        setFavourites([]);
-        apiCache.favourites = {};
-        return [];
-      }
-
-      const cacheKey = validIds.sort().join(',');
+      const cacheKey = favouriteIds.sort().join(',');
       if (isDataCached(apiCache.favourites, cacheKey, CACHE_TTL.FAVOURITES)) {
         const cachedData = apiCache.favourites[cacheKey].data;
         setFavourites(Array.isArray(cachedData) ? cachedData : []);
@@ -210,7 +210,7 @@ const GifProvider = ({ children }) => {
       }
 
       try {
-        const { data } = await giphy.gifs(validIds);
+        const { data } = await giphy.gifs(favouriteIds);
 
         if (!data || !Array.isArray(data)) {
           throw new Error("Invalid data returned from API");
@@ -222,80 +222,56 @@ const GifProvider = ({ children }) => {
           data: validData,
           timestamp: Date.now()
         };
-
+        saveCacheToStorage(apiCache);
         setFavourites(validData);
         return validData;
       } catch (error) {
         console.log("Failed to fetch your favourite gifs.", error);
         toast.error(`Failed to fetch your favourite gifs. Error: ${error.message}`);
-        setFavourites(validIds);
-        return validIds;
+        setFavourites(favouriteIds);
+        apiCache.favourites = {};
+        saveCacheToStorage(apiCache);
+        return favouriteIds;
       }
     } catch (error) {
       console.error("Unexpected error in fetchFavourites:", error);
       setFavourites([]);
+      apiCache.favourites = {};
+      saveCacheToStorage(apiCache);
       return [];
     }
   }, [giphy, isDataCached])
 
-  const addToFavorites = useCallback((id) => {
+  const addToFavorites = useCallback(async (id) => {
     if (!id) return;
 
     const storedFavorites = localStorage.getItem("favouriteGifs");
     const favouriteIds = storedFavorites ? JSON.parse(storedFavorites) : [];
 
-    const safeIds = Array.isArray(favouriteIds) ? favouriteIds : [];
-
-    if (safeIds.includes(id)) {
-      const updatedFavouriteIds = safeIds.filter(itemId => itemId !== id);
-
-      localStorage.setItem("favouriteGifs", JSON.stringify(updatedFavouriteIds));
-
-      setFavourites(prevFavs => {
-        if (!Array.isArray(prevFavs)) return [];
-
-        if (prevFavs.length > 0 && typeof prevFavs[0] === 'object') {
-          return prevFavs.filter(gif => gif && gif.id !== id);
-        } else {
-          return prevFavs.filter(itemId => itemId !== id);
-        }
-      });
-
-      Object.keys(apiCache.favourites).forEach(key => {
-        if (key.includes(id)) {
-          delete apiCache.favourites[key];
-        }
-      });
-
-      if (updatedFavouriteIds.length === 0) {
-        apiCache.favourites = {};
-      }
+    let updatedFavouriteIds;
+    if (favouriteIds.includes(id)) {
+      updatedFavouriteIds = favouriteIds.filter(itemId => itemId !== id);
     } else {
-      const updatedFavouriteIds = [...new Set([...safeIds, id])];
-
-      localStorage.setItem("favouriteGifs", JSON.stringify(updatedFavouriteIds));
-
-      const gifInTrending = Array.isArray(trendingGifs) && trendingGifs.find(gif => gif && gif.id === id);
-      const gifInSearch = Array.isArray(searchResults) && searchResults.find(gif => gif && gif.id === id);
-      const gifInCurrent = currentGif && currentGif.id === id ? currentGif : null;
-      const gifToAdd = gifInTrending || gifInSearch || gifInCurrent || { id };
-
-      setFavourites(prevFavs => {
-        if (!Array.isArray(prevFavs)) return [gifToAdd];
-
-        if (prevFavs.length > 0 && typeof prevFavs[0] === 'object') {
-          if (prevFavs.some(gif => gif && gif.id === id)) {
-            return prevFavs; // Already exists, no change
-          }
-          return [...prevFavs, gifToAdd];
-        } else {
-          return updatedFavouriteIds;
-        }
-      });
+      updatedFavouriteIds = [...new Set([...favouriteIds, id])];
     }
 
-    apiCache.favourites = {};
-  }, [trendingGifs, searchResults, currentGif])
+    localStorage.setItem("favouriteGifs", JSON.stringify(updatedFavouriteIds));
+
+    // removing stale data from the cache
+    Object.keys(apiCache.favourites).forEach(key => {
+      if (key.includes(id)) {
+        delete apiCache.favourites[key];
+      }
+    });
+
+    if (updatedFavouriteIds.length === 0) {
+      apiCache.favourites = {};
+    }
+    saveCacheToStorage(apiCache);
+
+    const updatedFavourites = await fetchFavourites();
+    setFavourites(updatedFavourites);
+  }, [fetchFavourites]);
 
   const shareGif = useCallback((gif) => {
     if (!gif) {
@@ -330,23 +306,8 @@ const GifProvider = ({ children }) => {
 
         let localFavorites = [];
         if (storedFavorites) {
-          try {
-            localFavorites = JSON.parse(storedFavorites);
-
-            if (!Array.isArray(localFavorites)) {
-              localFavorites = [];
-              localStorage.setItem("favouriteGifs", JSON.stringify([]));
-            } else if (localFavorites.some(id => !id || typeof id !== 'string')) {
-              localFavorites = localFavorites.filter(id => id && typeof id === 'string');
-              localStorage.setItem("favouriteGifs", JSON.stringify(localFavorites));
-            }
-          } catch (e) {
-            console.error("Error parsing favorites from localStorage", e);
-            localFavorites = [];
-            localStorage.setItem("favouriteGifs", JSON.stringify([]));
-          }
+          localFavorites = JSON.parse(storedFavorites);
         }
-
         if (localFavorites.length > 0) {
           await fetchFavourites();
         } else {
