@@ -1,23 +1,36 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 import { useParams } from 'react-router-dom'
 import { useGif } from '../context/GifContext';
 import Filters from '../components/Filters';
 import Gif from '../components/Gif';
+import useInfiniteScroll from '../hooks/useInfiniteScroll';
+
+const LIMIT = 20;
 
 const Search = () => {
 
   const { query } = useParams();
-  const { searchResults, searchGifs, filter, } = useGif();
+  const { searchGifs, filter } = useGif();
 
-
-  useEffect(() => {
-    searchGifs(query, {
+  // Function to fetch a page of search results
+  const fetchSearchPage = async ({ page }) => {
+    const offset = page * LIMIT;
+    const data = await searchGifs(query, {
       sort: "relevant",
       lang: "en",
       type: filter,
-      limit: 20,
-    })
-  }, [filter, query, searchGifs])
+      limit: LIMIT,
+      offset: offset,
+    });
+    // If searchGifs returns undefined/null on error, default to []
+    return data || [];
+  };
+
+  // Use the infinite scroll hook
+  const { items: searchResults, hasMore, observerRef } = useInfiniteScroll(
+    fetchSearchPage,
+    [filter, query] // re-run when filter or query changes
+  );
 
   return (
     <>
@@ -26,11 +39,21 @@ const Search = () => {
         <Filters alignLeft={true} />
         {
           searchResults.length > 0 ? (
-            <div className="columns-2 md:columns-3 lg:columns-4 gap-2">
-              {searchResults.map((gif) => (
-                <Gif key={gif.id} gif={gif} />
-              ))}
-            </div>
+            <>
+              <div className="columns-2 md:columns-3 lg:columns-4 gap-2">
+                {searchResults.map((gif, index) => (
+                  <Gif key={`${gif?.id}-${index}`} gif={gif} />
+                ))}
+              </div>
+              
+              {/* Sentinel div for Intersection Observer */}
+              <div ref={observerRef} style={{ height: 1 }} />
+              
+              {/* No more results message */}
+              {!hasMore && (
+                <div className="text-center my-4 text-gray-500">No more search results to load.</div>
+              )}
+            </>
           ) : (
             <span>No GIFs found for {query}.</span>
           )

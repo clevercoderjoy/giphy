@@ -9,7 +9,7 @@ const CACHE_TTL = {
   GIF: 30 * 60 * 1000,
   CATEGORIES: 60 * 60 * 1000,
   RELATED: 5 * 60 * 1000,
-  SEARCH: 5 * 60 * 1000,
+  SEARCH: 2 * 60 * 1000, // Reduced from 5 to 2 minutes
   FAVOURITES: 120 * 60 * 1000
 }
 
@@ -34,9 +34,43 @@ function loadCacheFromStorage() {
   };
 }
 
-// Utility to save cache to localStorage
+// Utility to save cache to localStorage with size management
 function saveCacheToStorage(cache) {
-  localStorage.setItem("apiCache", JSON.stringify(cache));
+  try {
+    // Check cache size before saving
+    const cacheString = JSON.stringify(cache);
+    const cacheSize = new Blob([cacheString]).size;
+    const maxSize = 4.5 * 1024 * 1024; // 4.5MB limit (leaving some buffer)
+    
+    if (cacheSize > maxSize) {
+      console.log('Cache too large, cleaning up...');
+      // Clean up old entries from each cache section
+      Object.keys(cache).forEach(section => {
+        if (cache[section] && typeof cache[section] === 'object') {
+          const entries = Object.entries(cache[section]);
+          // Sort by timestamp (oldest first) and remove oldest 50%
+          const sortedEntries = entries.sort((a, b) => 
+            (a[1]?.timestamp || 0) - (b[1]?.timestamp || 0)
+          );
+          const entriesToRemove = Math.floor(entries.length * 0.5);
+          sortedEntries.slice(0, entriesToRemove).forEach(([key]) => {
+            delete cache[section][key];
+          });
+        }
+      });
+    }
+    
+    localStorage.setItem("apiCache", JSON.stringify(cache));
+  } catch (error) {
+    console.error('Failed to save cache to localStorage:', error);
+    // If still failing, clear the cache entirely
+    try {
+      localStorage.removeItem("apiCache");
+      console.log('Cleared localStorage cache due to storage error');
+    } catch (clearError) {
+      console.error('Failed to clear localStorage:', clearError);
+    }
+  }
 }
 
 // Initialize apiCache from localStorage
@@ -55,9 +89,7 @@ const GifProvider = ({ children }) => {
   const giphy = useMemo(() => new GiphyFetch(import.meta.env.VITE_GIPHY_KEY), []);
 
   const [trendingGifs, setTrendingGifs] = useState([]);
-  const [searchResults, setSearchResults] = useState([]);
   const [currentGif, setCurrentGif] = useState(null);
-  const [relatedGifs, setRelatedGifs] = useState([]);
   const [categories, setCategories] = useState([]);
   const [filter, setFilter] = useState("gifs");
   const [favourites, setFavourites] = useState([]);
@@ -81,13 +113,16 @@ const GifProvider = ({ children }) => {
   }, [])
 
   const fetchTrending = useCallback(async (queryParams = { limit: 20, type: "gifs" }) => {
-    const cacheKey = `${queryParams.type}_${queryParams.limit}`;
+    // Ensure offset is always a number
+    const offset = typeof queryParams.offset === 'number' ? queryParams.offset : 0;
+    const cacheKey = `${queryParams.type}_${queryParams.limit}_${offset}`;
     if (isDataCached(apiCache.trending, cacheKey, CACHE_TTL.TRENDING)) {
       setTrendingGifs(apiCache.trending[cacheKey].data);
       return apiCache.trending[cacheKey].data;
     }
     try {
-      const { data } = await giphy.trending(queryParams);
+      // Always pass offset to the API
+      const { data } = await giphy.trending({ ...queryParams, offset });
       apiCache.trending[cacheKey] = {
         data,
         timestamp: Date.now()
@@ -123,21 +158,24 @@ const GifProvider = ({ children }) => {
   }, [giphy, isDataCached])
 
   const fetchRelatedGifs = useCallback(async (id, queryParams = { limit: 10 }) => {
-    const cacheKey = `${id}_${queryParams.limit}`;
+    const offset = typeof queryParams.offset === 'number' ? queryParams.offset : 0;
+    const cacheKey = `${id}_${queryParams.limit}_${offset}`;
 
     if (isDataCached(apiCache.related, cacheKey, CACHE_TTL.RELATED)) {
-      setRelatedGifs(apiCache.related[cacheKey].data);
+      // For infinite scroll, we don't want to set relatedGifs here
+      // as it would replace the accumulated results
       return apiCache.related[cacheKey].data;
     }
 
     try {
-      const { data } = await giphy.related(id, queryParams);
+      const { data } = await giphy.related(id, { ...queryParams, offset });
       apiCache.related[cacheKey] = {
         data,
         timestamp: Date.now()
       }
       saveCacheToStorage(apiCache);
-      setRelatedGifs(data);
+      // For infinite scroll, we don't set relatedGifs here
+      // as it would replace the accumulated results
       return data;
     } catch (error) {
       console.log("Failed to fetch related Gifs.", error);
@@ -146,20 +184,26 @@ const GifProvider = ({ children }) => {
   }, [giphy, isDataCached])
 
   const searchGifs = useCallback(async (query, queryParams = { limit: 20, type: "gifs" }) => {
-    const cacheKey = `${query}_${queryParams.type}_${queryParams.limit}`;
+    // Ensure offset is always a number
+    const offset = typeof queryParams.offset === 'number' ? queryParams.offset : 0;
+    const cacheKey = `${query}_${queryParams.type}_${queryParams.limit}_${offset}`;
+    
     if (isDataCached(apiCache.search, cacheKey, CACHE_TTL.SEARCH)) {
-      setSearchResults(apiCache.search[cacheKey].data);
+      // For infinite scroll, we don't want to set searchResults here
+      // as it would replace the accumulated results
       return apiCache.search[cacheKey].data;
     }
 
     try {
-      const { data } = await giphy.search(query, queryParams);
+      // Always pass offset to the API
+      const { data } = await giphy.search(query, { ...queryParams, offset });
       apiCache.search[cacheKey] = {
         data,
         timestamp: Date.now()
       };
       saveCacheToStorage(apiCache);
-      setSearchResults(data);
+      // For infinite scroll, we don't set searchResults here
+      // as it would replace the accumulated results
       return data;
     } catch (error) {
       console.log("Failed to fetch search results.", error.message);
@@ -299,6 +343,20 @@ const GifProvider = ({ children }) => {
     }
   }, [])
 
+  const clearCache = useCallback(() => {
+    try {
+      localStorage.removeItem("apiCache");
+      // Reset the in-memory cache
+      Object.keys(apiCache).forEach(key => {
+        apiCache[key] = {};
+      });
+      toast.success("Cache cleared successfully");
+    } catch (error) {
+      console.error('Failed to clear cache:', error);
+      toast.error("Failed to clear cache");
+    }
+  }, [])
+
   useEffect(() => {
     const initFavorites = async () => {
       try {
@@ -327,9 +385,7 @@ const GifProvider = ({ children }) => {
     <GifContext.Provider
       value={{
         trendingGifs,
-        searchResults,
         currentGif,
-        relatedGifs,
         categories,
         filter,
         favourites,
@@ -343,6 +399,7 @@ const GifProvider = ({ children }) => {
         addToFavorites,
         shareGif,
         embedGif,
+        clearCache,
       }}>
       {children}
     </GifContext.Provider>

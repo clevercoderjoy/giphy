@@ -17,6 +17,7 @@ const SearchBar = () => {
   const handleEnterPress = (e) => {
     if (e.key === "Enter") {
       searchGif(query);
+      setQuery("");
     }
   }
 

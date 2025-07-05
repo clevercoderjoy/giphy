@@ -1,32 +1,39 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useCallback } from 'react'
 import { useParams } from 'react-router-dom';
 import { useGif } from '../context/GifContext';
 import Gif from '../components/Gif';
 import FollowOn from '../components/FollowOn';
+import useInfiniteScroll from '../hooks/useInfiniteScroll';
+
+const LIMIT = 20;
 
 const Category = () => {
 
   const { category } = useParams();
   const { fetchCategories, searchGifs, filter } = useGif();
-  const [categoryGifs, setCategoryGifs] = useState([]);
+
+  // Function to fetch a page of category GIFs
+  const fetchCategoryPage = useCallback(async ({ page }) => {
+    const offset = page * LIMIT;
+    const data = await searchGifs(category, {
+      sort: "relevant",
+      lang: "en",
+      type: filter,
+      limit: LIMIT,
+      offset: offset,
+    });
+    return data || [];
+  }, [category, searchGifs, filter]);
+
+  // Use the infinite scroll hook
+  const { items: categoryGifs, hasMore, observerRef } = useInfiniteScroll(
+    fetchCategoryPage,
+    [filter, category] // re-run when filter or category changes
+  );
 
   useEffect(() => {
     fetchCategories();
-
-    if (category) {
-      searchGifs(category, {
-        sort: "relevant",
-        lang: "en",
-        type: filter,
-        limit: 20,
-      }).then(data => {
-        if (data) {
-          setCategoryGifs(data);
-        }
-      });
-    }
-
-  }, [category, fetchCategories, searchGifs, filter]);
+  }, [fetchCategories]);
 
   return (
     <>
@@ -47,15 +54,30 @@ const Category = () => {
         <div>
           {
             categoryGifs && categoryGifs.length > 0 ? (
-              <div className="columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-2">
-                {
-                  categoryGifs?.slice(1)?.map((gif, index) => {
-                    return (
-                      <Gif gif={gif} key={`${gif?.id || 'category-gif'}-${index}`} />
-                    )
-                  })
-                }
-              </div>
+              <>
+                <div className="columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-2">
+                  {
+                    categoryGifs?.slice(1)?.map((gif, index) => {
+                      return (
+                        <Gif gif={gif} key={`${gif?.id || 'category-gif'}-${index}`} />
+                      )
+                    })
+                  }
+                </div>
+                
+                {/* Sentinel div for Intersection Observer */}
+                <div ref={observerRef} style={{ height: 1 }} />
+                
+                {/* Loading indicator */}
+                {hasMore && (
+                  <div className="text-center my-4 text-gray-500">Loading more {category} GIFs...</div>
+                )}
+                
+                {/* No more results message */}
+                {!hasMore && (
+                  <div className="text-center my-4 text-gray-500">No more {category} GIFs to load.</div>
+                )}
+              </>
             ) : (
               <div className="text-center p-8">
                 <p className="text-xl">Loading {category} GIFs...</p>
