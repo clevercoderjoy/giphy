@@ -1,6 +1,7 @@
 import { GiphyFetch } from "@giphy/js-fetch-api";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
+import { contentType } from '../data/contentType';
 
 const GifContext = createContext();
 
@@ -78,7 +79,6 @@ export const useGif = () => {
 const GifProvider = ({ children }) => {
 
   const giphy = useMemo(() => new GiphyFetch(import.meta.env.VITE_GIPHY_KEY), []);
-  import { contentType } from './../data/contentType';
 
   const [trendingGifs, setTrendingGifs] = useState([]);
   const [currentGif, setCurrentGif] = useState(null);
