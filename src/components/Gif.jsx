@@ -18,11 +18,7 @@ const GifContent = ({ gif, hover }) => {
   const gifType = gif.type || "gif";
 
   const isFavorite = useMemo(() => {
-    if (!Array.isArray(favourites) || !favourites.length) return false;
-
-    if (typeof favourites[0] === "string") {
-      return favourites.includes(gif.id);
-    }
+    if (!favourites.length) return false;
 
     return favourites.some(favGif => favGif && favGif.id === gif.id);
   }, [favourites, gif.id]);

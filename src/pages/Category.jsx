@@ -10,25 +10,25 @@ const LIMIT = 20;
 const Category = () => {
 
   const { category } = useParams();
-  const { fetchCategories, searchGifs, filter } = useGif();
+  const { fetchCategories, fetchCategoryGifs, filter } = useGif();
 
-  // Function to fetch a page of category GIFs
+  // Function to fetch Gifs of that category
   const fetchCategoryPage = useCallback(async ({ page }) => {
-    const offset = page * LIMIT;
-    const data = await searchGifs(category, {
+    const data = await fetchCategoryGifs({
+      category,
       sort: "relevant",
       lang: "en",
       type: filter,
       limit: LIMIT,
-      offset: offset,
+      offset: page * LIMIT,
     });
-    return data || [];
-  }, [category, searchGifs, filter]);
+    return data;
+  }, [category, fetchCategoryGifs, filter]);
 
   // Use the infinite scroll hook
   const { items: categoryGifs, hasMore, observerRef } = useInfiniteScroll(
     fetchCategoryPage,
-    [filter, category] // re-run when filter or category changes
+    [filter, category]
   );
 
   useEffect(() => {
@@ -57,22 +57,22 @@ const Category = () => {
               <>
                 <div className="columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-2">
                   {
-                    categoryGifs?.slice(1)?.map((gif, index) => {
+                    categoryGifs?.slice(1)?.map((gif) => {
                       return (
-                        <Gif gif={gif} key={`${gif?.id || 'category-gif'}-${index}`} />
+                        <Gif gif={gif} key={gif?.id} />
                       )
                     })
                   }
                 </div>
-                
+
                 {/* Sentinel div for Intersection Observer */}
                 <div ref={observerRef} style={{ height: 1 }} />
-                
+
                 {/* Loading indicator */}
                 {hasMore && (
                   <div className="text-center my-4 text-gray-500">Loading more {category} GIFs...</div>
                 )}
-                
+
                 {/* No more results message */}
                 {!hasMore && (
                   <div className="text-center my-4 text-gray-500">No more {category} GIFs to load.</div>

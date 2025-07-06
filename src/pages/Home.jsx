@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useGif } from '../context/GifContext';
 import Gif from '../components/Gif';
 import Filters from '../components/Filters';
@@ -10,10 +10,14 @@ const Home = () => {
   const { fetchTrending, filter } = useGif();
 
   // Function to fetch a page of trending GIFs
-  const fetchTrendingPage = async ({ page }) => {
-    const data = await fetchTrending({ limit: LIMIT, offset: page * LIMIT, type: filter });
+  const fetchTrendingPage = useCallback(async ({ page }) => {
+    const data = await fetchTrending({
+      limit: LIMIT,
+      offset: page * LIMIT,
+      type: filter
+    });
     return data;
-  };
+  }, [fetchTrending, filter]);
 
   // Use the infinite scroll hook
   const { items: trendingGifs, hasMore, observerRef } = useInfiniteScroll(

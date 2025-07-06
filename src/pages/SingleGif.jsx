@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
-import { contentType } from './../data/contentType';
 import { useGif } from '../context/GifContext';
 import Gif from '../components/Gif';
 import { HiMiniChevronDoubleDown, HiMiniChevronDoubleUp, HiMiniHeart } from 'react-icons/hi2';
@@ -15,65 +14,40 @@ const LIMIT = 10;
 const SingleGif = () => {
 
   const { type, slug } = useParams();
-  const { fetchRelatedGifs, fetchGif, currentGif, addToFavorites, favourites, shareGif, embedGif } = useGif();
+  const { fetchRelatedGifsPage, fetchSingleGif, currentGif, addToFavorites, favourites, shareGif, embedGif } = useGif();
   const [readMore, setReadMore] = useState(false);
   const [gifId, setGifId] = useState(null);
 
-  // Infinite scroll for related GIFs
-  const fetchRelatedGifsPage = async ({ page }) => {
-    console.log('Fetching related GIFs page:', page, 'for gif ID:', gifId);
-    if (!gifId) {
-      return [];
-    }
-    const offset = page * LIMIT;
-    const data = await fetchRelatedGifs(gifId, { limit: LIMIT, offset });
-    console.log('Related GIFs results for page', page, ':', data?.length || 0, 'items');
-    return data || [];
-  };
-  
+  // Function to fetch related GIFs page
+  const fetchRelatedPage = useCallback(async ({ page }) => {
+    const data = await fetchRelatedGifsPage({
+      gifId,
+      page,
+      limit: LIMIT
+    });
+    return data;
+  }, [gifId, fetchRelatedGifsPage]);
+
   const { items: relatedInfinite, hasMore: hasMoreRelated, observerRef: relatedObserverRef } =
-    useInfiniteScroll(fetchRelatedGifsPage, [gifId], LIMIT);
+    useInfiniteScroll(fetchRelatedPage, [gifId], LIMIT);
 
-  console.log('SingleGif - relatedInfinite length:', relatedInfinite.length, 'hasMore:', hasMoreRelated);
-
-  // Test if there are actually more related GIFs available
-  useEffect(() => {
-    if (gifId && relatedInfinite.length === LIMIT) {
-      const testMoreGifs = async () => {
-        console.log('Testing if there are more related GIFs...');
-        const testData = await fetchRelatedGifs(gifId, { limit: LIMIT, offset: LIMIT });
-        console.log('Test page 1 has:', testData?.length || 0, 'items');
-      };
-      testMoreGifs();
-    }
-  }, [gifId, relatedInfinite.length, fetchRelatedGifs]);
-
-  const isFavorite = React.useMemo(() => {
-    if (!currentGif || !Array.isArray(favourites) || !favourites.length) return false;
-
-    if (typeof favourites[0] === "string") {
-      return favourites.includes(currentGif.id);
-    }
+  const isFavorite = useMemo(() => {
+    if (!currentGif || !favourites.length) return false;
 
     return favourites.some(favGif => favGif && favGif.id === currentGif.id);
   }, [favourites, currentGif]);
 
   useEffect(() => {
-    if (!contentType.includes(type)) {
-      throw new Error("Invalid content type.");
-    }
     const fetchData = async () => {
       try {
-        const gifIdParts = slug.split("-");
-        const id = gifIdParts[gifIdParts.length - 1];
+        const { id } = await fetchSingleGif(slug, type);
         setGifId(id);
-        await fetchGif(id);
       } catch (error) {
-        console.log(error)
+        console.log(error);
       }
-    }
+    };
     fetchData();
-  }, [fetchGif, slug, type])
+  }, [fetchSingleGif, slug, type]);
 
   return (
     <>
@@ -202,7 +176,7 @@ const SingleGif = () => {
             </div>
           </div>
           <div>
-            <span className='font-extrabold'>Related GIFs ({relatedInfinite.length})</span>
+            <div className='font-extrabold my-4'>Related GIFs ({relatedInfinite.length})</div>
             {relatedInfinite.length > 0 ? (
               <>
                 <div className="columns-2 md:columns-3 gap-2">
@@ -210,15 +184,15 @@ const SingleGif = () => {
                     <Gif gif={gif} key={gif.id} />
                   ))}
                 </div>
-                
+
                 {/* Sentinel div for Intersection Observer - moved outside columns */}
                 <div ref={relatedObserverRef} style={{ height: 20, marginTop: 20 }} />
-                
+
                 {/* Loading indicator */}
                 {hasMoreRelated && (
                   <div className="text-center my-4 text-gray-500">Loading more related GIFs...</div>
                 )}
-                
+
                 {/* No more results message */}
                 {!hasMoreRelated && (
                   <div className="text-center my-4 text-gray-500">No more related GIFs to load.</div>

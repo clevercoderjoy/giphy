@@ -16,10 +16,7 @@ const Header = () => {
   };
 
   useEffect(() => {
-    const getCategories = async () => {
-      await fetchCategories();
-    }
-    getCategories();
+    fetchCategories();
   }, [fetchCategories])
 
   useEffect(() => {
@@ -51,10 +48,10 @@ const Header = () => {
           </button>
 
           {/* favourites button - only show when there are favorites */}
-          {Array.isArray(favourites) && favourites.length > 0 && (
+          {favourites.length > 0 && (
             <Link to="/favourites" className="favourite truncate ml-2 h-10 bg-gray-700 hover:bg-gray-800 px-4 cursor-pointer rounded flex items-center gap-2">
               Favourite GIFs
-              <span className="ml-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+              <span className="ml-1 bg-[tomato] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                 {favourites.length}
               </span>
             </Link>

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { useGif } from '../context/GifContext';
 import Filters from '../components/Filters';
@@ -13,23 +13,21 @@ const Search = () => {
   const { searchGifs, filter } = useGif();
 
   // Function to fetch a page of search results
-  const fetchSearchPage = async ({ page }) => {
-    const offset = page * LIMIT;
+  const fetchSearchPage = useCallback(async ({ page }) => {
     const data = await searchGifs(query, {
       sort: "relevant",
       lang: "en",
       type: filter,
       limit: LIMIT,
-      offset: offset,
+      offset: page * LIMIT,
     });
-    // If searchGifs returns undefined/null on error, default to []
-    return data || [];
-  };
+    return data;
+  }, [query, searchGifs, filter]);
 
   // Use the infinite scroll hook
   const { items: searchResults, hasMore, observerRef } = useInfiniteScroll(
     fetchSearchPage,
-    [filter, query] // re-run when filter or query changes
+    [filter, query]
   );
 
   return (
@@ -45,10 +43,10 @@ const Search = () => {
                   <Gif key={`${gif?.id}-${index}`} gif={gif} />
                 ))}
               </div>
-              
+
               {/* Sentinel div for Intersection Observer */}
               <div ref={observerRef} style={{ height: 1 }} />
-              
+
               {/* No more results message */}
               {!hasMore && (
                 <div className="text-center my-4 text-gray-500">No more search results to load.</div>
