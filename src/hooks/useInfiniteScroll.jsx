@@ -10,6 +10,13 @@ function useInfiniteScroll(fetchFn, deps = [], limit = DEFAULT_LIMIT) {
 
   const observerRef = useRef();
 
+  const getErrorMessage = (err) => {
+    if (err?.status === 429 || (err?.message && err.message.toLowerCase().includes('rate limit'))) {
+      return "You've reached the GIF search limit. Please wait a few minutes and try again.";
+    }
+    return "Something went wrong while loading GIFs. Please try again.";
+  };
+
   const loadMore = useCallback(async () => {
     if (!hasMore) {
       return;
@@ -25,7 +32,8 @@ function useInfiniteScroll(fetchFn, deps = [], limit = DEFAULT_LIMIT) {
       setHasMore(newHasMore);
       setPage(prev => prev + 1);
     } catch (err) {
-      setError("API se data nahi aa raha hai. Ho sakta hai rate limit exceed ho gayi ho.");
+      console.error("Infinite scroll error:", err);
+      setError(getErrorMessage(err));
       setHasMore(false);
     }
   }, [fetchFn, hasMore, page, limit])
@@ -45,7 +53,8 @@ function useInfiniteScroll(fetchFn, deps = [], limit = DEFAULT_LIMIT) {
         setHasMore(newHasMore);
         setPage(1);
       } catch (err) {
-        setError("API se data nahi aa raha hai. Ho sakta hai rate limit exceed ho gayi ho.");
+        console.error("Infinite scroll error:", err);
+        setError(getErrorMessage(err));
         setItems([]);
         setHasMore(false);
       }
