@@ -6,6 +6,7 @@ function useInfiniteScroll(fetchFn, deps = [], limit = DEFAULT_LIMIT) {
   const [items, setItems] = useState([]);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(0);
+  const [error, setError] = useState(null);
 
   const observerRef = useRef();
 
@@ -13,19 +14,20 @@ function useInfiniteScroll(fetchFn, deps = [], limit = DEFAULT_LIMIT) {
     if (!hasMore) {
       return;
     }
-    const newItems = await fetchFn({ page });
-    // Defensive programming
-    setItems(prev => {
-      const ids = new Set(prev.map(item => item.id));
-      const filtered = newItems.filter(item => !ids.has(item.id));
-      return [...prev, ...filtered];
-    });
-
-    // if we got a full page, there might be more
-    // If we got fewer than the limit, we've reached the end
-    const newHasMore = newItems.length >= limit;
-    setHasMore(newHasMore);
-    setPage(prev => prev + 1);
+    try {
+      const newItems = await fetchFn({ page }) || [];
+      setItems(prev => {
+        const ids = new Set(prev.map(item => item.id));
+        const filtered = newItems.filter(item => item && !ids.has(item.id));
+        return [...prev, ...filtered];
+      });
+      const newHasMore = newItems.length >= limit;
+      setHasMore(newHasMore);
+      setPage(prev => prev + 1);
+    } catch (err) {
+      setError("API se data nahi aa raha hai. Ho sakta hai rate limit exceed ho gayi ho.");
+      setHasMore(false);
+    }
   }, [fetchFn, hasMore, page, limit])
 
   // Reset mechanism for infinite scroll when dependencies change
@@ -33,15 +35,20 @@ function useInfiniteScroll(fetchFn, deps = [], limit = DEFAULT_LIMIT) {
     setItems([]);
     setPage(0);
     setHasMore(true);
+    setError(null);
     // Load the first page immediately
     const loadFirstPage = async () => {
-      const newItems = await fetchFn({ page: 0 });
-      setItems(newItems);
-
-      // Simple logic: if we got a full page, there might be more
-      const newHasMore = (newItems).length >= limit;
-      setHasMore(newHasMore);
-      setPage(1);
+      try {
+        const newItems = await fetchFn({ page: 0 }) || [];
+        setItems(newItems);
+        const newHasMore = (newItems).length >= limit;
+        setHasMore(newHasMore);
+        setPage(1);
+      } catch (err) {
+        setError("API se data nahi aa raha hai. Ho sakta hai rate limit exceed ho gayi ho.");
+        setItems([]);
+        setHasMore(false);
+      }
     };
     loadFirstPage();
   }, deps)
@@ -58,7 +65,7 @@ function useInfiniteScroll(fetchFn, deps = [], limit = DEFAULT_LIMIT) {
     return () => observer.disconnect();
   }, [hasMore, loadMore])
 
-  return { items, hasMore, observerRef };
+  return { items: items || [], hasMore, observerRef, error };
 }
 
 export default useInfiniteScroll;

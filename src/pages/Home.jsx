@@ -3,6 +3,7 @@ import { useGif } from '../context/GifContext';
 import Gif from '../components/Gif';
 import Filters from '../components/Filters';
 import useInfiniteScroll from '../hooks/useInfiniteScroll';
+import NotFound from './NotFound';
 
 const LIMIT = 20;
 
@@ -20,10 +21,14 @@ const Home = () => {
   }, [fetchTrending, filter]);
 
   // Use the infinite scroll hook
-  const { items: trendingGifs, hasMore, observerRef } = useInfiniteScroll(
+  const { items: trendingGifs, hasMore, observerRef, error } = useInfiniteScroll(
     fetchTrendingPage,
     [filter]
   );
+
+  if (error) {
+    return <NotFound errorMessage={error} />;
+  }
 
   return (
     <div>
@@ -32,7 +37,7 @@ const Home = () => {
       <Filters alignLeft showTrending />
 
       <div className='columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-2'>
-        {trendingGifs.map((gif, index) => (
+        {(trendingGifs || []).map((gif, index) => (
           <Gif key={`${gif?.id}-${index}`} gif={gif} />
         ))}
       </div>
